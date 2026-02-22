@@ -9,6 +9,8 @@ import { initCommand } from './commands/init.js';
 import { backupCommand } from './commands/backup.js';
 import { restoreCommand } from './commands/restore.js';
 import { statusCommand } from './commands/status.js';
+import { packCommand } from './commands/pack.js';
+import { unpackCommand } from './commands/unpack.js';
 
 const program = new Command();
 
@@ -79,5 +81,18 @@ program
   .option('--skip-agents', 'Skip restoring agent configurations')
   .option('-y, --yes', 'Auto-confirm without prompting')
   .action(restoreCommand);
+
+// Local file backup (no GitHub required)
+program
+  .command('pack')
+  .description('Pack OpenClaw configuration into a local file (no GitHub needed)')
+  .argument('[output]', 'Output file name')
+  .action(packCommand);
+
+program
+  .command('unpack')
+  .description('Unpack configuration from a local file')
+  .argument('<file>', 'Pack file to unpack (.zip)')
+  .action(unpackCommand);
 
 program.parse();
