@@ -162,7 +162,31 @@ function guessSkillSource(name: string): string {
   return knownPackages[name] || `npm:@openclaw/${name}`;
 }
 
+export async function isSkillInstalled(name: string): Promise<boolean> {
+  // Check 1: extensions directory exists
+  const extensionsDir = join(getOpenClawDir(), 'extensions', name);
+  try {
+    await access(extensionsDir);
+    return true;
+  } catch {
+    // Directory doesn't exist, continue checking
+  }
+  
+  // Check 2: plugin is enabled in config
+  const config = await readOpenClawConfig();
+  if (config?.plugins?.entries?.[name]?.enabled !== false) {
+    return true;
+  }
+  
+  return false;
+}
+
 export async function installSkill(name: string, source?: string): Promise<void> {
+  // Check if already installed
+  if (await isSkillInstalled(name)) {
+    throw new Error(`Skill '${name}' is already installed`);
+  }
+  
   const { exec } = await import('child_process');
   const { promisify } = await import('util');
   const execAsync = promisify(exec);
