@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { getConfig, saveConfig, installSkill } from '../config.js';
+import { getConfig, saveConfig, installSkill, getProfile } from '../config.js';
 import { 
   restoreFullBackup, 
   restoreWorkspaceFiles,
@@ -26,28 +26,49 @@ export async function restoreCommand(
     process.exit(1);
   }
   
-  // Auto-detect source if not provided
-  if (!source) {
-    if (config.defaultGistId) {
-      console.log(chalk.blue(`💡 发现之前的备份：${config.defaultGistId}`));
-      source = config.defaultGistId;
-    } else {
-      console.log(chalk.red('❌ 未提供恢复来源'));
-      console.log(chalk.yellow('请提供 Gist ID 或仓库：'));
-      console.log(chalk.cyan('  clawpack restore <gist-id>'));
-      console.log(chalk.cyan('  clawpack restore user/repo'));
-      process.exit(1);
+  // Resolve source - could be a profile name or gist ID
+  let resolvedSource = source;
+  let profileName: string | undefined;
+  
+  if (source) {
+    // Check if source is a profile name
+    const profile = getProfile(config, source);
+    if (profile) {
+      resolvedSource = profile.gistId;
+      profileName = source;
+      console.log(chalk.blue(`💡 使用配置 "${source}" (Gist: ${resolvedSource})`));
+    }
+  } else {
+    // Auto-detect source
+    const activeProfile = getProfile(config);
+    if (activeProfile) {
+      resolvedSource = activeProfile.gistId;
+      profileName = config.activeProfile;
+      console.log(chalk.blue(`💡 使用默认配置 "${profileName}"`));
+    } else if (config.defaultGistId) {
+      resolvedSource = config.defaultGistId;
+      console.log(chalk.blue(`💡 使用默认 Gist: ${resolvedSource}`));
     }
   }
   
-  console.log(chalk.blue(`📥 正在从 ${source} 下载...`));
+  if (!resolvedSource) {
+    console.log(chalk.red('❌ 未提供恢复来源'));
+    console.log(chalk.yellow('请提供 Gist ID、昵称或仓库：'));
+    console.log(chalk.cyan('  clawpack restore <gist-id>'));
+    console.log(chalk.cyan('  clawpack restore <nickname>     # 使用配置的昵称'));
+    console.log(chalk.cyan('  clawpack restore user/repo'));
+    console.log(chalk.gray('\n使用 "clawpack profile list" 查看所有配置'));
+    process.exit(1);
+  }
+  
+  console.log(chalk.blue(`📥 正在从 ${resolvedSource} 下载...`));
   
   let manifest: any;
   try {
-    if (source.includes('/')) {
-      manifest = await getFromRepo(config.githubToken, source);
+    if (resolvedSource.includes('/')) {
+      manifest = await getFromRepo(config.githubToken, resolvedSource);
     } else {
-      manifest = await getGist(config.githubToken, source);
+      manifest = await getGist(config.githubToken, resolvedSource);
     }
   } catch (error) {
     console.error(chalk.red('❌ 下载失败：'), error instanceof Error ? error.message : error);
@@ -59,8 +80,8 @@ export async function restoreCommand(
   console.log(chalk.gray(`  备份时间：${new Date(manifest.exportedAt).toLocaleString()}`));
   
   // Save as default
-  if (!source.includes('/')) {
-    config.defaultGistId = source;
+  if (!resolvedSource.includes('/')) {
+    config.defaultGistId = resolvedSource;
     await saveConfig(config);
   }
   
@@ -143,6 +164,9 @@ export async function restoreCommand(
   
   // Summary
   console.log(chalk.blue('\n📊 恢复完成'));
+  if (profileName) {
+    console.log(chalk.green(`  来源配置：${profileName}`));
+  }
   console.log(chalk.yellow('\n💡 提示：'));
   
   if (manifest.skills?.length > 0) {

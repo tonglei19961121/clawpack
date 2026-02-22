@@ -1,8 +1,8 @@
 import chalk from 'chalk';
-import { getConfig, saveConfig, scanLocalSkills, type SkillsManifest } from '../config.js';
+import { getConfig, saveConfig, scanLocalSkills, type SkillsManifest, addProfile, getProfile } from '../config.js';
 import { createGist, updateGist, pushToRepo } from '../github.js';
 
-export async function pushCommand(options: { gist?: boolean; repo?: string }): Promise<void> {
+export async function pushCommand(options: { gist?: boolean; repo?: string; profile?: string }): Promise<void> {
   const config = await getConfig();
   
   if (!config.githubToken) {
@@ -10,6 +10,24 @@ export async function pushCommand(options: { gist?: boolean; repo?: string }): P
     console.log(chalk.yellow('请先运行：clawpack init'));
     console.log(chalk.gray('或设置环境变量：export GITHUB_TOKEN=你的token'));
     process.exit(1);
+  }
+  
+  // Determine target profile
+  let targetProfileName = options.profile;
+  let gistId: string | undefined;
+  
+  if (targetProfileName) {
+    const profile = getProfile(config, targetProfileName);
+    if (!profile) {
+      console.log(chalk.red(`❌ 配置 "${targetProfileName}" 不存在`));
+      console.log(chalk.gray('   使用 "clawpack profile list" 查看所有配置'));
+      console.log(chalk.gray('   或使用 "clawpack profile add" 添加新配置'));
+      process.exit(1);
+    }
+    gistId = profile.gistId;
+    console.log(chalk.blue(`📦 使用配置 "${targetProfileName}"`));
+  } else {
+    gistId = config.defaultGistId;
   }
   
   console.log(chalk.blue('📦 正在扫描本地技能...'));
@@ -46,19 +64,35 @@ export async function pushCommand(options: { gist?: boolean; repo?: string }): P
       console.log(chalk.green(`✓ 推送成功！`));
       console.log(chalk.gray(`  仓库：${options.repo}`));
     } else {
-      // Use Gist by default
-      if (config.defaultGistId) {
-        console.log(chalk.blue('\n📤 更新已有 Gist...'));
-        await updateGist(config.githubToken, config.defaultGistId, manifest);
+      // Use Gist
+      if (gistId) {
+        console.log(chalk.blue(`\n📤 更新 Gist...`));
+        await updateGist(config.githubToken, gistId, manifest);
         console.log(chalk.green('✓ 更新成功！'));
-        console.log(chalk.gray(`  Gist ID：${config.defaultGistId}`));
+        console.log(chalk.gray(`  Gist ID：${gistId}`));
+        
+        // Update profile's lastBackup if using a named profile
+        if (targetProfileName) {
+          await addProfile(config, targetProfileName, gistId, 
+            getProfile(config, targetProfileName)?.description);
+        }
       } else {
         console.log(chalk.blue('\n📤 创建新 Gist...'));
-        const gistId = await createGist(config.githubToken, manifest);
-        config.defaultGistId = gistId;
-        await saveConfig(config);
+        const newGistId = await createGist(config.githubToken, manifest);
+        
+        if (targetProfileName) {
+          // Update existing profile
+          await addProfile(config, targetProfileName, newGistId,
+            getProfile(config, targetProfileName)?.description);
+        } else {
+          // Save as default
+          config.defaultGistId = newGistId;
+          await saveConfig(config);
+        }
+        
         console.log(chalk.green('✓ 创建成功！'));
-        console.log(chalk.cyan(`  Gist ID：${gistId}`));
+        console.log(chalk.cyan(`  Gist ID：${newGistId}`));
+        gistId = newGistId;
       }
     }
     
@@ -69,10 +103,12 @@ export async function pushCommand(options: { gist?: boolean; repo?: string }): P
     
     if (!options.repo) {
       console.log(chalk.yellow('\n💡 在其他设备恢复：'));
-      console.log(chalk.cyan(`  clawpack pull ${config.defaultGistId}`));
-      
-      if (!config.defaultGistId) {
-        console.log(chalk.gray('   或直接运行：clawpack pull（自动检测）'));
+      if (targetProfileName) {
+        console.log(chalk.cyan(`  clawpack restore ${targetProfileName}`));
+        console.log(chalk.gray(`   或: clawpack pull ${gistId}`));
+      } else {
+        console.log(chalk.cyan(`  clawpack pull ${gistId}`));
+        console.log(chalk.gray('   或使用昵称: clawpack profile add my-nick ' + gistId));
       }
     }
     

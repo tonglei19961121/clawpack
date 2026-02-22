@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { getConfig, saveConfig } from '../config.js';
+import { getConfig, saveConfig, addProfile, getProfile } from '../config.js';
 import { 
   createFullBackup, 
   backupWorkspaceFiles, 
@@ -12,6 +12,7 @@ export async function backupCommand(options: {
   workspace?: boolean; 
   sensitive?: boolean;
   repo?: string;
+  profile?: string;
 }): Promise<void> {
   const config = await getConfig();
   
@@ -19,6 +20,24 @@ export async function backupCommand(options: {
     console.log(chalk.red('❌ GitHub Token 未配置'));
     console.log(chalk.yellow('请先运行：clawpack init'));
     process.exit(1);
+  }
+  
+  // Determine target profile
+  let targetProfileName = options.profile;
+  let gistId: string | undefined;
+  
+  if (targetProfileName) {
+    const profile = getProfile(config, targetProfileName);
+    if (!profile) {
+      console.log(chalk.red(`❌ 配置 "${targetProfileName}" 不存在`));
+      console.log(chalk.gray('   使用 "clawpack profile list" 查看所有配置'));
+      console.log(chalk.gray('   或使用 "clawpack profile add" 添加新配置'));
+      process.exit(1);
+    }
+    gistId = profile.gistId;
+    console.log(chalk.blue(`📦 使用配置 "${targetProfileName}"`));
+  } else {
+    gistId = config.defaultGistId;
   }
   
   console.log(chalk.blue('📦 正在创建备份...\n'));
@@ -88,16 +107,30 @@ export async function backupCommand(options: {
       location = options.repo;
       console.log(chalk.green(`✓ 已推送到仓库：${location}`));
     } else {
-      if (config.defaultGistId) {
-        await updateGist(config.githubToken, config.defaultGistId, fullManifest as any);
-        location = config.defaultGistId;
-        console.log(chalk.green(`✓ 已更新 Gist：${location}`));
-      } else {
-        const gistId = await createGist(config.githubToken, fullManifest as any);
-        config.defaultGistId = gistId;
-        await saveConfig(config);
+      if (gistId) {
+        await updateGist(config.githubToken, gistId, fullManifest as any);
         location = gistId;
+        console.log(chalk.green(`✓ 已更新 Gist：${location}`));
+        
+        // Update profile's lastBackup if using a named profile
+        if (targetProfileName) {
+          await addProfile(config, targetProfileName, gistId, 
+            getProfile(config, targetProfileName)?.description);
+        }
+      } else {
+        const newGistId = await createGist(config.githubToken, fullManifest as any);
+        
+        if (targetProfileName) {
+          await addProfile(config, targetProfileName, newGistId,
+            getProfile(config, targetProfileName)?.description);
+        } else {
+          config.defaultGistId = newGistId;
+          await saveConfig(config);
+        }
+        
+        location = newGistId;
         console.log(chalk.green(`✓ 已创建 Gist：${location}`));
+        gistId = newGistId;
       }
     }
     
@@ -114,7 +147,13 @@ export async function backupCommand(options: {
     }
     
     console.log(chalk.yellow('\n💡 恢复命令：'));
-    console.log(chalk.cyan(`  clawpack restore ${location}${options.full ? ' --full' : ''}`));
+    if (targetProfileName) {
+      console.log(chalk.cyan(`  clawpack restore ${targetProfileName}${options.full ? ' --full' : ''}`));
+      console.log(chalk.gray(`   或使用 Gist ID: clawpack restore ${location}${options.full ? ' --full' : ''}`));
+    } else {
+      console.log(chalk.cyan(`  clawpack restore ${location}${options.full ? ' --full' : ''}`));
+      console.log(chalk.gray('   或使用昵称: clawpack profile add my-nick ' + location));
+    }
     
   } catch (error) {
     console.error(chalk.red('❌ 备份失败：'), error instanceof Error ? error.message : error);

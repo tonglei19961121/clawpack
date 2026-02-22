@@ -2,9 +2,17 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { readFile, writeFile, mkdir, readdir, access } from 'fs/promises';
 
+export interface Profile {
+  gistId: string;
+  description?: string;
+  lastBackup?: string;
+}
+
 export interface ClawpackConfig {
   githubToken?: string;
-  defaultGistId?: string;
+  defaultGistId?: string; // 兼容旧版本
+  profiles?: Record<string, Profile>;
+  activeProfile?: string;
 }
 
 export interface Skill {
@@ -32,6 +40,18 @@ export async function getConfig(): Promise<ClawpackConfig> {
   try {
     const data = await readFile(CONFIG_FILE, 'utf-8');
     config = JSON.parse(data);
+    
+    // Migration: convert old defaultGistId to profiles
+    if (config.defaultGistId && !config.profiles) {
+      config.profiles = {
+        default: {
+          gistId: config.defaultGistId,
+          description: 'Default backup',
+          lastBackup: new Date().toISOString()
+        }
+      };
+      config.activeProfile = 'default';
+    }
   } catch {
     // Config file doesn't exist or is invalid
   }
@@ -48,6 +68,82 @@ export async function getConfig(): Promise<ClawpackConfig> {
 export async function saveConfig(config: ClawpackConfig): Promise<void> {
   await mkdir(CLAWPACK_DIR, { recursive: true });
   await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
+}
+
+// Profile management
+export async function addProfile(
+  config: ClawpackConfig, 
+  name: string, 
+  gistId: string, 
+  description?: string
+): Promise<void> {
+  if (!config.profiles) {
+    config.profiles = {};
+  }
+  
+  config.profiles[name] = {
+    gistId,
+    description: description || `Backup profile: ${name}`,
+    lastBackup: new Date().toISOString()
+  };
+  
+  await saveConfig(config);
+}
+
+export async function removeProfile(config: ClawpackConfig, name: string): Promise<boolean> {
+  if (!config.profiles || !config.profiles[name]) {
+    return false;
+  }
+  
+  delete config.profiles[name];
+  
+  // If we removed the active profile, clear it
+  if (config.activeProfile === name) {
+    config.activeProfile = undefined;
+  }
+  
+  await saveConfig(config);
+  return true;
+}
+
+export async function setActiveProfile(config: ClawpackConfig, name: string): Promise<boolean> {
+  if (!config.profiles || !config.profiles[name]) {
+    return false;
+  }
+  
+  config.activeProfile = name;
+  await saveConfig(config);
+  return true;
+}
+
+export function getProfile(config: ClawpackConfig, name?: string): Profile | null {
+  if (!config.profiles) {
+    return null;
+  }
+  
+  const profileName = name || config.activeProfile;
+  if (!profileName) {
+    return null;
+  }
+  
+  return config.profiles[profileName] || null;
+}
+
+export function getActiveGistId(config: ClawpackConfig): string | undefined {
+  const profile = getProfile(config);
+  return profile?.gistId || config.defaultGistId;
+}
+
+export function listProfiles(config: ClawpackConfig): Array<{name: string; profile: Profile; isActive: boolean}> {
+  if (!config.profiles) {
+    return [];
+  }
+  
+  return Object.entries(config.profiles).map(([name, profile]) => ({
+    name,
+    profile,
+    isActive: name === config.activeProfile
+  }));
 }
 
 export function getOpenClawDir(): string {
