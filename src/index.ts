@@ -29,8 +29,9 @@ program
 program
   .command('pull')
   .description('Download skills from GitHub')
-  .argument('<source>', 'Gist ID or repo (owner/repo)')
+  .argument('[source]', 'Gist ID or repo (owner/repo) - optional if used before')
   .option('-f, --force', 'Overwrite existing skills')
+  .option('-y, --yes', 'Auto-confirm without prompting')
   .action(pullCommand);
 
 program
