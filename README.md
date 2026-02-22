@@ -11,6 +11,8 @@
 - 🤖 **自动检测** - 自动识别 GitHub CLI 登录状态
 - 📱 **跨设备同步** - 工作电脑、家用电脑配置保持一致
 - 🔧 **完整配置** - 不仅备份技能，还包括代理、通道、工作区文件等
+- 📦 **本地打包** - 无需 GitHub，直接打包成文件传输
+- 🔒 **纯离线** - 支持完全不联网的备份恢复
 
 ## 🔐 GitHub 授权
 
@@ -96,7 +98,27 @@ clawpack backup --full --workspace
 clawpack backup --full --repo yourname/openclaw-config
 ```
 
-### 4. 恢复（新设备）
+### 4. 本地打包（无需 GitHub）
+
+适合没有 GitHub 账号的用户，直接打包成文件传输：
+
+```bash
+# 打包配置
+clawpack pack
+
+# 指定文件名
+clawpack pack my-backup.zip
+
+# 解压恢复
+clawpack unpack my-backup.zip
+```
+
+打包内容包括：
+- ✅ openclaw.json 完整配置
+- ✅ 所有已安装的技能
+- ✅ 工作区文件（SOUL.md, AGENTS.md 等）
+
+### 5. 恢复（新设备）
 
 ```bash
 # 自动检测之前的备份
@@ -114,9 +136,18 @@ clawpack restore 3f11d420e3b5a00a6aaeb316ea430201 --full
 | 命令 | 说明 |
 |------|------|
 | `clawpack init` | 初始化配置，检测 GitHub 和技能 |
+| `clawpack status` | 查看授权状态和配置 |
 | `clawpack list` | 列出已安装的 OpenClaw 技能 |
 
-### 备份命令
+### 本地打包命令（无需 GitHub）
+
+| 命令 | 说明 |
+|------|------|
+| `clawpack pack` | 打包配置为本地 zip 文件 |
+| `clawpack pack my.zip` | 指定输出文件名 |
+| `clawpack unpack my.zip` | 从本地文件恢复配置 |
+
+### 云端备份命令
 
 | 命令 | 说明 |
 |------|------|
@@ -170,7 +201,19 @@ clawpack restore --full
 openclaw gateway restart
 ```
 
-### 场景 2：多设备同步
+### 场景 2：无 GitHub 账号用户
+```bash
+# 电脑 A 打包
+clawpack pack my-config.zip
+
+# 通过 U 盘/微信/邮件传输文件到电脑 B
+
+# 电脑 B 解压
+clawpack unpack my-config.zip
+openclaw gateway restart
+```
+
+### 场景 3：多设备同步
 ```bash
 # 电脑 A 修改后
 clawpack backup --full
