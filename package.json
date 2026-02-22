@@ -1,6 +1,6 @@
 {
   "name": "clawpack",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Backup and share your OpenClaw skills via GitHub",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { pushCommand } from './commands/push.js';
 import { pullCommand } from './commands/pull.js';
 import { listCommand } from './commands/list.js';
 import { exportCommand } from './commands/export.js';
@@ -18,7 +17,7 @@ const program = new Command();
 program
   .name('clawpack')
   .description('Backup and share your OpenClaw skills via GitHub')
-  .version('1.4.0');
+  .version('1.5.0');
 
 program
   .command('init')
@@ -34,14 +33,6 @@ program
   .command('list')
   .description('List installed OpenClaw skills')
   .action(listCommand);
-
-program
-  .command('push')
-  .description('Upload your skills to GitHub')
-  .option('-g, --gist', 'Create/update a GitHub Gist (default)')
-  .option('-r, --repo <repo>', 'Push to a GitHub repository (format: owner/repo)')
-  .option('-p, --profile <name>', 'Push to a named profile')
-  .action(pushCommand);
 
 program
   .command('pull')
@@ -63,10 +54,10 @@ program
   .argument('<file>', 'Path to clawpack.json file')
   .action(importCommand);
 
-// Backup commands
+// Backup commands (unified)
 program
   .command('backup')
-  .description('Create a full backup of OpenClaw configuration')
+  .description('Create a backup of OpenClaw configuration')
   .option('-f, --full', 'Include complete configuration (not just skills)')
   .option('-w, --workspace', 'Include workspace files (SOUL.md, AGENTS.md, etc.)')
   .option('-s, --sensitive', 'Include sensitive data (appSecret, tokens)')

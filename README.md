@@ -1,61 +1,13 @@
 # Clawpack
 
-一键备份和恢复你的 OpenClaw 完整配置到 GitHub。
-
-[English README](./README.en.md)
+一键备份和恢复你的 OpenClaw 配置。
 
 ## ✨ 特性
 
-- 🚀 **一键备份** - 将技能配置备份到 GitHub Gist
-- 🔄 **秒级恢复** - 新设备一键同步所有配置
-- 🤖 **自动检测** - 自动识别 GitHub CLI 登录状态
-- 📱 **跨设备同步** - 工作电脑、家用电脑配置保持一致
-- 🔧 **完整配置** - 不仅备份技能，还包括代理、通道、工作区文件等
-- 📦 **本地打包** - 无需 GitHub，直接打包成文件传输
-- 🔒 **纯离线** - 支持完全不联网的备份恢复
-- 🏷️ **多配置昵称** - 一个 GitHub 账号管理多个设备配置，用昵称代替难记的 Gist ID
-
-## 🔐 GitHub 授权
-
-clawpack 需要 GitHub 账号来存储备份。支持以下三种授权方式（按优先级自动检测）：
-
-### 方式 1：环境变量（推荐）
-
-```bash
-export GITHUB_TOKEN=ghp_your_token_here
-```
-
-创建 Token：
-1. 访问 https://github.com/settings/tokens/new
-2. 勾选 `gist` 权限（必需）
-3. 生成并复制 token
-
-### 方式 2：GitHub CLI
-
-```bash
-gh auth login
-```
-
-按提示完成授权，clawpack 会自动检测。
-
-### 方式 3：查看当前授权状态
-
-```bash
-clawpack status
-```
-
-输出示例：
-```
-📊 clawpack 状态检查
-
-🔐 GitHub 授权状态
-   状态: ✅ 已授权
-   来源: GITHUB_TOKEN 环境变量
-   Token: ghp_DkHNfptK...
-
-⚙️ 配置状态
-   默认备份: 3f11d420e3b5a00a6aaeb316ea430201
-```
+- 📦 **本地打包** - 无需 GitHub，直接打包成 zip 文件
+- 🏷️ **多配置管理** - 用昵称（如 `work-mac`）代替难记的 Gist ID
+- ☁️ **GitHub 备份** - 云端同步，跨设备恢复
+- 🔧 **完整配置** - 技能、代理设置、工作区文件一网打尽
 
 ## 📦 安装
 
@@ -63,104 +15,69 @@ clawpack status
 npm install -g clawpack
 ```
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 初始化配置
+### 方式一：本地打包（推荐，无需 GitHub）
 
-```bash
-clawpack init
-```
-
-clawpack 会自动检测：
-- ✅ GitHub CLI 登录状态
-- ✅ 环境变量中的 Token
-- ✅ 现有 OpenClaw 技能
-
-### 2. 备份（技能模式）
+适合快速备份或没有 GitHub 账号的用户。
 
 ```bash
-# 仅备份技能
-clawpack push
-
-# 或
-clawpack backup
-```
-
-### 3. 完整配置备份
-
-```bash
-# 备份完整配置（推荐）
-clawpack backup --full
-
-# 包含工作区文件（SOUL.md, AGENTS.md 等）
-clawpack backup --full --workspace
-
-# 推送到仓库
-clawpack backup --full --repo yourname/openclaw-config
-```
-
-### 4. 本地打包（无需 GitHub）
-
-适合没有 GitHub 账号的用户，直接打包成文件传输：
-
-```bash
-# 打包配置
+# 1. 打包当前配置
 clawpack pack
 
-# 指定文件名
-clawpack pack my-backup.zip
+# 输出：clawpack-backup-1234567890.zip
 
-# 解压恢复
-clawpack unpack my-backup.zip
+# 2. 将 zip 文件复制到新设备（U盘/微信/邮件）
+
+# 3. 在新设备上解压恢复
+clawpack unpack clawpack-backup-1234567890.zip
+
+# 4. 重启 OpenClaw
+openclaw gateway restart
 ```
 
-打包内容包括：
-- ✅ openclaw.json 完整配置
-- ✅ 所有已安装的技能
-- ✅ 工作区文件（SOUL.md, AGENTS.md 等）
+### 方式二：多配置管理（推荐有多台设备的用户）
 
-### 5. 恢复（新设备）
+用昵称管理多个设备配置，告别难记的 Gist ID。
 
 ```bash
-# 自动检测之前的备份
-clawpack pull              # 仅恢复技能
-clawpack restore --full    # 恢复完整配置
+# 1. 初始化
+clawpack init
 
-# 或指定 Gist ID
-clawpack restore 3f11d420e3b5a00a6aaeb316ea430201 --full
+# 2. 添加你的设备配置
+clawpack profile add work-mac abc123 "公司 MacBook"
+clawpack profile add home-pc def456 "家用电脑"
+clawpack profile add laptop ghi789 "笔记本"
+
+# 3. 查看所有配置
+clawpack profile list
+# 输出：
+# ▶ work-mac ★ 当前使用
+#   Gist ID: abc123
+#   描述: 公司 MacBook
+#
+#   home-pc
+#   Gist ID: def456
+#   描述: 家用电脑
+
+# 4. 备份到指定配置
+clawpack backup --profile work-mac
+
+# 5. 在其他设备恢复
+clawpack restore work-mac
 ```
 
 ## 📋 命令参考
 
-### 基础命令
+### 本地打包（无需 GitHub）
 
 | 命令 | 说明 |
 |------|------|
-| `clawpack init` | 初始化配置，检测 GitHub 和技能 |
-| `clawpack status` | 查看授权状态和配置 |
-| `clawpack list` | 列出已安装的 OpenClaw 技能 |
-
-### 本地打包命令（无需 GitHub）
-
-| 命令 | 说明 |
-|------|------|
-| `clawpack pack` | 打包配置为本地 zip 文件 |
+| `clawpack pack` | 打包配置为 zip 文件 |
 | `clawpack pack my.zip` | 指定输出文件名 |
-| `clawpack unpack my.zip` | 从本地文件恢复配置 |
+| `clawpack unpack my.zip` | 从 zip 文件恢复配置 |
 
-### 云端备份命令
-
-| 命令 | 说明 |
-|------|------|
-| `clawpack push` | 备份技能到 GitHub Gist |
-| `clawpack backup` | 同上 |
-| `clawpack backup --full` | 完整配置备份（技能+配置） |
-| `clawpack backup --workspace` | 包含工作区文件 |
-| `clawpack backup --sensitive` | 包含敏感信息（密钥等） |
-| `clawpack backup --repo user/repo` | 推送到 GitHub 仓库 |
-| `clawpack backup --profile <name>` | 推送到指定配置（昵称） |
-
-### 多配置管理（昵称功能）
+### 多配置管理
 
 | 命令 | 说明 |
 |------|------|
@@ -170,151 +87,75 @@ clawpack restore 3f11d420e3b5a00a6aaeb316ea430201 --full
 | `clawpack profile use <昵称>` | 切换到指定配置 |
 | `clawpack profile show <昵称>` | 查看配置详情 |
 
-**示例：**
-```bash
-# 添加多个设备配置
-clawpack profile add work-mac abc123 "公司 MacBook Pro"
-clawpack profile add home-pc def456 "家用台式机"
-clawpack profile add laptop ghi789 "笔记本电脑"
-
-# 查看所有配置
-clawpack profile list
-# 输出：
-# ▶ work-mac ★ 当前使用
-#   Gist ID: abc123
-#   描述: 公司 MacBook Pro
-# 
-#   home-pc
-#   Gist ID: def456
-#   描述: 家用台式机
-
-# 切换配置
-clawpack profile use home-pc
-
-# 推送到指定配置
-clawpack backup --full --profile work-mac
-
-# 使用昵称恢复（无需记忆 Gist ID）
-clawpack restore work-mac --full
-```
-
-### 恢复命令
+### GitHub 云端备份
 
 | 命令 | 说明 |
 |------|------|
-| `clawpack pull` | 从上次备份恢复技能 |
-| `clawpack pull <gist-id>` | 从指定 Gist 恢复技能 |
-| `clawpack pull <nickname>` | 从指定昵称的配置恢复 |
-| `clawpack restore --full` | 恢复完整配置 |
-| `clawpack restore <nickname> --full` | 从昵称恢复完整配置 |
-| `clawpack restore --workspace` | 恢复工作区文件 |
-| `clawpack restore --skip-channels` | 跳过通道配置 |
+| `clawpack backup` | 备份技能到 GitHub Gist |
+| `clawpack backup --full` | 完整配置备份（推荐） |
+| `clawpack backup --profile <昵称>` | 推送到指定配置 |
+| `clawpack restore` | 从默认配置恢复 |
+| `clawpack restore <昵称>` | 从指定配置恢复 |
 
-### 导入/导出
+### 其他命令
 
 | 命令 | 说明 |
 |------|------|
-| `clawpack export` | 导出到本地 JSON 文件 |
-| `clawpack import <file>` | 从本地 JSON 文件导入 |
-
-## 🔧 备份内容
-
-### 技能备份
-- ✅ 已安装的技能列表
-- ✅ 技能来源（npm/GitHub/本地）
-- ✅ 版本信息
-
-### 完整配置备份 (--full)
-- ✅ 代理配置（模型设置、并发等）
-- ✅ 通道配置（飞书、Discord 等，不含密钥）
-- ✅ 插件配置
-- ✅ 命令设置
-- ✅ 钩子配置
-- ✅ 工作区文件（SOUL.md, AGENTS.md, USER.md, TOOLS.md）
+| `clawpack init` | 初始化配置 |
+| `clawpack status` | 查看授权状态 |
+| `clawpack list` | 列出已安装技能 |
 
 ## 💡 使用场景
 
-### 场景 1：新电脑快速配置
+### 场景 1：单机快速备份
+```bash
+clawpack pack                    # 打包
+# ... 传输文件 ...
+clawpack unpack backup.zip       # 恢复
+```
+
+### 场景 2：多设备同步
+```bash
+# 电脑 A（公司）
+clawpack profile add work abc123 "公司电脑"
+clawpack backup --profile work
+
+# 电脑 B（家用）
+clawpack profile add home def456 "家用电脑"
+clawpack restore work            # 同步公司配置
+```
+
+### 场景 3：新设备快速配置
 ```bash
 # 新电脑
 npm install -g clawpack
 clawpack init
-clawpack restore --full
-openclaw gateway restart
-```
-
-### 场景 2：无 GitHub 账号用户
-```bash
-# 电脑 A 打包
-clawpack pack my-config.zip
-
-# 通过 U 盘/微信/邮件传输文件到电脑 B
-
-# 电脑 B 解压
-clawpack unpack my-config.zip
-openclaw gateway restart
-```
-
-### 场景 3：多设备同步
-```bash
-# 电脑 A 修改后
-clawpack backup --full
-
-# 电脑 B 同步
-clawpack restore --full
-```
-
-### 场景 4：多设备管理（使用昵称）
-```bash
-# 管理多个设备配置
-clawpack profile add work-mac abc123 "公司 MacBook"
-clawpack profile add home-pc def456 "家用电脑"  
-clawpack profile add laptop ghi789 "笔记本"
-
-# 电脑 A（公司）备份
-clawpack backup --full --profile work-mac
-
-# 电脑 B（家用）备份
-clawpack backup --full --profile home-pc
-
-# 笔记本恢复公司配置
-clawpack profile use work-mac
 clawpack restore work-mac --full
-
-# 查看所有配置
-clawpack profile list
+openclaw gateway restart
 ```
 
-### 场景 5：配置分享
+## 🔐 GitHub 授权（仅云端备份需要）
+
+如果你需要使用 GitHub 云端备份功能：
+
 ```bash
-# 备份到仓库（方便分享）
-clawpack backup --full --repo yourname/openclaw-config
+# 方式 1：环境变量
+export GITHUB_TOKEN=ghp_your_token_here
 
-# 他人使用
-clawpack restore yourname/openclaw-config --full
+# 方式 2：GitHub CLI
+gh auth login
+
+# 创建 Token：https://github.com/settings/tokens
+# 勾选 `gist` 权限
 ```
 
-## 🔐 安全说明
+## 🔧 备份内容
 
-- **Gist 是私有的** - 默认创建私有 Gist，只有你可见
-- **敏感信息** - 默认排除 appSecret、token 等敏感字段
-- **如需包含敏感信息** - 使用 `--sensitive` 选项（谨慎使用）
-
-## 🗺️ 路线图
-
-- [x] 自动 GitHub Token 检测
-- [x] 一键恢复（记住上次 Gist）
-- [x] 完整配置备份
-- [x] 工作区文件同步
-- [ ] 敏感信息加密存储
-- [ ] 配置版本历史
-- [ ] 支持 Cursor MCP
-- [ ] 支持 Claude Code
+- ✅ 已安装的技能
+- ✅ 代理配置（模型设置等）
+- ✅ 通道配置（飞书、Discord 等）
+- ✅ 工作区文件（SOUL.md, AGENTS.md 等）
 
 ## 📄 许可证
 
 MIT
-
----
-
-**Made with ❤️ for the OpenClaw community**
