@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Command } from 'commander';
 import { pushCommand } from './commands/push.js';
 import { pullCommand } from './commands/pull.js';
