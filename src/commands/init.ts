@@ -73,12 +73,20 @@ export async function initCommand(): Promise<void> {
   // Step 3: Suggest next steps
   console.log(chalk.cyan('\n📋 常用命令'));
   
+  console.log(chalk.white('   基础命令：'));
+  console.log(chalk.gray('   clawpack list         查看所有技能'));
+  
   if (skills.length > 0 && config.githubToken) {
-    console.log(chalk.white('   clawpack push     备份技能到 GitHub'));
+    console.log(chalk.white('\n   备份技能：'));
+    console.log(chalk.gray('   clawpack push         备份技能（快速）'));
+    console.log(chalk.gray('   clawpack backup       完整配置备份（推荐）'));
+    console.log(chalk.gray('   clawpack backup --full --workspace  包含工作区文件'));
   }
-  console.log(chalk.white('   clawpack list     查看所有技能'));
+  
   if (config.defaultGistId) {
-    console.log(chalk.white('   clawpack pull     恢复已备份的技能'));
+    console.log(chalk.white('\n   恢复配置：'));
+    console.log(chalk.gray('   clawpack pull         恢复技能'));
+    console.log(chalk.gray('   clawpack restore --full   恢复完整配置'));
   }
   
   console.log(chalk.green('\n✓ 初始化完成！'));
@@ -86,6 +94,8 @@ export async function initCommand(): Promise<void> {
   
   // Smart suggestion
   if (skills.length > 0 && config.githubToken && !config.defaultGistId) {
-    console.log(chalk.yellow('\n💡 建议：现在运行 "clawpack push" 创建你的第一个备份'));
+    console.log(chalk.yellow('\n💡 建议：'));
+    console.log(chalk.gray('   首次备份推荐运行：clawpack backup --full'));
+    console.log(chalk.gray('   这将备份技能 + 所有配置 + 工作区文件'));
   }
 }
