@@ -43,12 +43,15 @@ export async function initCommand(): Promise<void> {
   
   if (detected) {
     const { source, token } = detected as any;
-    console.log(chalk.green(`   ✓ 检测到 GitHub Token (${source})`));
+    console.log(chalk.green(`   ✓ 已授权 (${source})`));
+    console.log(chalk.gray(`   Token: ${token.substring(0, 12)}...`));
     config.githubToken = token;
   } else {
-    console.log(chalk.yellow('   ⚠  未检测到 GitHub Token'));
-    console.log(chalk.gray('   你可以稍后设置，或现在创建：'));
-    console.log(chalk.gray('   https://github.com/settings/tokens'));
+    console.log(chalk.yellow('   ⚠  未授权'));
+    console.log(chalk.gray('   支持以下方式：'));
+    console.log(chalk.gray('   1. export GITHUB_TOKEN=your_token'));
+    console.log(chalk.gray('   2. gh auth login'));
+    console.log(chalk.gray('   创建 Token: https://github.com/settings/tokens'));
   }
   
   // Step 2: Scan existing skills

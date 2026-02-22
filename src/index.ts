@@ -8,18 +8,24 @@ import { importCommand } from './commands/import.js';
 import { initCommand } from './commands/init.js';
 import { backupCommand } from './commands/backup.js';
 import { restoreCommand } from './commands/restore.js';
+import { statusCommand } from './commands/status.js';
 
 const program = new Command();
 
 program
   .name('clawpack')
   .description('Backup and share your OpenClaw skills via GitHub')
-  .version('1.1.0');
+  .version('1.2.2');
 
 program
   .command('init')
   .description('Initialize clawpack configuration')
   .action(initCommand);
+
+program
+  .command('status')
+  .description('Check authentication and configuration status')
+  .action(statusCommand);
 
 program
   .command('list')

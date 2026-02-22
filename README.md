@@ -12,6 +12,48 @@
 - 📱 **跨设备同步** - 工作电脑、家用电脑配置保持一致
 - 🔧 **完整配置** - 不仅备份技能，还包括代理、通道、工作区文件等
 
+## 🔐 GitHub 授权
+
+clawpack 需要 GitHub 账号来存储备份。支持以下三种授权方式（按优先级自动检测）：
+
+### 方式 1：环境变量（推荐）
+
+```bash
+export GITHUB_TOKEN=ghp_your_token_here
+```
+
+创建 Token：
+1. 访问 https://github.com/settings/tokens/new
+2. 勾选 `gist` 权限（必需）
+3. 生成并复制 token
+
+### 方式 2：GitHub CLI
+
+```bash
+gh auth login
+```
+
+按提示完成授权，clawpack 会自动检测。
+
+### 方式 3：查看当前授权状态
+
+```bash
+clawpack status
+```
+
+输出示例：
+```
+📊 clawpack 状态检查
+
+🔐 GitHub 授权状态
+   状态: ✅ 已授权
+   来源: GITHUB_TOKEN 环境变量
+   Token: ghp_DkHNfptK...
+
+⚙️ 配置状态
+   默认备份: 3f11d420e3b5a00a6aaeb316ea430201
+```
+
 ## 📦 安装
 
 ```bash
