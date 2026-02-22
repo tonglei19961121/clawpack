@@ -26,12 +26,23 @@ const CLAWPACK_DIR = join(homedir(), '.config', 'clawpack');
 const CONFIG_FILE = join(CLAWPACK_DIR, 'config.json');
 
 export async function getConfig(): Promise<ClawpackConfig> {
+  let config: ClawpackConfig = {};
+  
+  // Read from config file
   try {
     const data = await readFile(CONFIG_FILE, 'utf-8');
-    return JSON.parse(data);
+    config = JSON.parse(data);
   } catch {
-    return {};
+    // Config file doesn't exist or is invalid
   }
+  
+  // Environment variable takes priority
+  const envToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+  if (envToken) {
+    config.githubToken = envToken;
+  }
+  
+  return config;
 }
 
 export async function saveConfig(config: ClawpackConfig): Promise<void> {
