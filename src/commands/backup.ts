@@ -6,6 +6,23 @@ import {
   type FullBackupManifest 
 } from '../backup.js';
 import { createGist, updateGist, pushToRepo } from '../github.js';
+import { createInterface } from 'readline';
+import { stdin, stdout } from 'process';
+
+// Helper to ask user for input
+async function askQuestion(question: string): Promise<string> {
+  const rl = createInterface({
+    input: stdin,
+    output: stdout
+  });
+  
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
 
 export async function backupCommand(options: { 
   full?: boolean; 
@@ -19,12 +36,14 @@ export async function backupCommand(options: {
   if (!config.githubToken) {
     console.log(chalk.red('❌ GitHub Token 未配置'));
     console.log(chalk.yellow('请先运行：clawpack init'));
+    console.log(chalk.gray('或设置环境变量：export GITHUB_TOKEN=你的token'));
     process.exit(1);
   }
   
   // Determine target profile
   let targetProfileName = options.profile;
   let gistId: string | undefined;
+  let isNewGist = false;
   
   if (targetProfileName) {
     const profile = getProfile(config, targetProfileName);
@@ -118,19 +137,44 @@ export async function backupCommand(options: {
             getProfile(config, targetProfileName)?.description);
         }
       } else {
+        // Creating new Gist - ask for nickname
         const newGistId = await createGist(config.githubToken, fullManifest as any);
-        
-        if (targetProfileName) {
-          await addProfile(config, targetProfileName, newGistId,
-            getProfile(config, targetProfileName)?.description);
-        } else {
-          config.defaultGistId = newGistId;
-          await saveConfig(config);
-        }
-        
         location = newGistId;
+        isNewGist = true;
         console.log(chalk.green(`✓ 已创建 Gist：${location}`));
         gistId = newGistId;
+      }
+    }
+    
+    // If this is a new Gist, ask if user wants to save it as a profile
+    if (isNewGist && !options.repo) {
+      console.log(chalk.yellow('\n💡 提示：'));
+      console.log(chalk.gray(`   Gist ID: ${gistId}`));
+      console.log(chalk.gray('   这个 ID 很难记，建议保存为昵称方便以后使用。\n'));
+      
+      const nickname = await askQuestion(chalk.cyan('📝 为此配置起个昵称（直接回车跳过）：'));
+      
+      if (nickname) {
+        const description = await askQuestion(chalk.gray('   描述（可选，直接回车跳过）：'));
+        
+        await addProfile(config, nickname, gistId!, description || undefined);
+        
+        console.log(chalk.green(`\n✅ 已保存为 "${nickname}" 配置！`));
+        console.log(chalk.gray(`   以后可以使用：`));
+        console.log(chalk.gray(`     clawpack restore ${nickname}`));
+        console.log(chalk.gray(`     clawpack backup --profile ${nickname}`));
+        
+        // Set as default if this is the first profile
+        if (!config.activeProfile && !config.defaultGistId) {
+          config.activeProfile = nickname;
+          await saveConfig(config);
+          console.log(chalk.gray(`   已设为默认配置`));
+        }
+      } else {
+        // Save as default gist for backward compatibility
+        config.defaultGistId = gistId;
+        await saveConfig(config);
+        console.log(chalk.gray(`\n💡 提示：使用 "clawpack profile add <昵称> ${gistId}" 可保存为命名配置`));
       }
     }
     
@@ -146,17 +190,21 @@ export async function backupCommand(options: {
       console.log(chalk.green(`  文件：${Object.keys(workspaceFiles).length} 个`));
     }
     
-    console.log(chalk.yellow('\n💡 恢复命令：'));
-    if (targetProfileName) {
-      console.log(chalk.cyan(`  clawpack restore ${targetProfileName}${options.full ? ' --full' : ''}`));
-      console.log(chalk.gray(`   或使用 Gist ID: clawpack restore ${location}${options.full ? ' --full' : ''}`));
-    } else {
-      console.log(chalk.cyan(`  clawpack restore ${location}${options.full ? ' --full' : ''}`));
-      console.log(chalk.gray('   或使用昵称: clawpack profile add my-nick ' + location));
+    if (!options.repo && !isNewGist) {
+      console.log(chalk.yellow('\n💡 恢复命令：'));
+      if (targetProfileName) {
+        console.log(chalk.cyan(`  clawpack restore ${targetProfileName}${options.full ? ' --full' : ''}`));
+      } else {
+        console.log(chalk.cyan(`  clawpack restore ${location}${options.full ? ' --full' : ''}`));
+      }
     }
     
   } catch (error) {
     console.error(chalk.red('❌ 备份失败：'), error instanceof Error ? error.message : error);
+    console.log(chalk.gray('\n可能的原因：'));
+    console.log(chalk.gray('  • GitHub Token 权限不足（需要 gist 权限）'));
+    console.log(chalk.gray('  • 网络连接问题'));
+    console.log(chalk.gray('  • GitHub API 限制'));
     process.exit(1);
   }
 }
