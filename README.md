@@ -13,6 +13,7 @@
 - 🔧 **完整配置** - 不仅备份技能，还包括代理、通道、工作区文件等
 - 📦 **本地打包** - 无需 GitHub，直接打包成文件传输
 - 🔒 **纯离线** - 支持完全不联网的备份恢复
+- 🏷️ **多配置昵称** - 一个 GitHub 账号管理多个设备配置，用昵称代替难记的 Gist ID
 
 ## 🔐 GitHub 授权
 
@@ -157,6 +158,45 @@ clawpack restore 3f11d420e3b5a00a6aaeb316ea430201 --full
 | `clawpack backup --workspace` | 包含工作区文件 |
 | `clawpack backup --sensitive` | 包含敏感信息（密钥等） |
 | `clawpack backup --repo user/repo` | 推送到 GitHub 仓库 |
+| `clawpack backup --profile <name>` | 推送到指定配置（昵称） |
+
+### 多配置管理（昵称功能）
+
+| 命令 | 说明 |
+|------|------|
+| `clawpack profile list` | 列出所有配置 |
+| `clawpack profile add <昵称> <gist-id> [描述]` | 添加新配置 |
+| `clawpack profile remove <昵称>` | 删除配置 |
+| `clawpack profile use <昵称>` | 切换到指定配置 |
+| `clawpack profile show <昵称>` | 查看配置详情 |
+
+**示例：**
+```bash
+# 添加多个设备配置
+clawpack profile add work-mac abc123 "公司 MacBook Pro"
+clawpack profile add home-pc def456 "家用台式机"
+clawpack profile add laptop ghi789 "笔记本电脑"
+
+# 查看所有配置
+clawpack profile list
+# 输出：
+# ▶ work-mac ★ 当前使用
+#   Gist ID: abc123
+#   描述: 公司 MacBook Pro
+# 
+#   home-pc
+#   Gist ID: def456
+#   描述: 家用台式机
+
+# 切换配置
+clawpack profile use home-pc
+
+# 推送到指定配置
+clawpack backup --full --profile work-mac
+
+# 使用昵称恢复（无需记忆 Gist ID）
+clawpack restore work-mac --full
+```
 
 ### 恢复命令
 
@@ -164,7 +204,9 @@ clawpack restore 3f11d420e3b5a00a6aaeb316ea430201 --full
 |------|------|
 | `clawpack pull` | 从上次备份恢复技能 |
 | `clawpack pull <gist-id>` | 从指定 Gist 恢复技能 |
+| `clawpack pull <nickname>` | 从指定昵称的配置恢复 |
 | `clawpack restore --full` | 恢复完整配置 |
+| `clawpack restore <nickname> --full` | 从昵称恢复完整配置 |
 | `clawpack restore --workspace` | 恢复工作区文件 |
 | `clawpack restore --skip-channels` | 跳过通道配置 |
 
@@ -222,7 +264,28 @@ clawpack backup --full
 clawpack restore --full
 ```
 
-### 场景 3：配置分享
+### 场景 4：多设备管理（使用昵称）
+```bash
+# 管理多个设备配置
+clawpack profile add work-mac abc123 "公司 MacBook"
+clawpack profile add home-pc def456 "家用电脑"  
+clawpack profile add laptop ghi789 "笔记本"
+
+# 电脑 A（公司）备份
+clawpack backup --full --profile work-mac
+
+# 电脑 B（家用）备份
+clawpack backup --full --profile home-pc
+
+# 笔记本恢复公司配置
+clawpack profile use work-mac
+clawpack restore work-mac --full
+
+# 查看所有配置
+clawpack profile list
+```
+
+### 场景 5：配置分享
 ```bash
 # 备份到仓库（方便分享）
 clawpack backup --full --repo yourname/openclaw-config
