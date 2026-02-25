@@ -17,7 +17,7 @@ const program = new Command();
 program
   .name('clawpack')
   .description('Backup and share your OpenClaw skills via GitHub')
-  .version('1.5.0');
+  .version('1.6.0');
 
 program
   .command('init')

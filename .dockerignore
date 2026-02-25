@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.nyc_output
+coverage
+dist
+*.test.ts
+*.spec.ts
+.github
+CHANGELOG.md
+CONTRIBUTING.md
+EVOLUTION.md
+OPTIMIZATION-PLAN.md
+TEST-RESULTS.md

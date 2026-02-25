@@ -178,11 +178,26 @@ npm install -g clawpack
 clawpack --version
 ```
 
+### Docker 使用（可选）
+```bash
+# 构建镜像
+docker build -t clawpack .
+
+# 运行（查看状态）
+docker run --rm -v ~/.openclaw:/root/.openclaw clawpack status
+
+# 打包配置
+docker run --rm -v ~/.openclaw:/root/.openclaw -v $(pwd)/output:/output clawpack pack /output/backup.zip
+
+# 使用 docker-compose
+docker-compose up clawpack
+```
+
 ---
 
 ## 📖 文档
 
-- [详细使用指南](https://github.com/tonglei1996/clawpack#readme)
+- [详细使用指南](https://github.com/tonglei19961121/clawpack#readme)
 - [常见问题](#faq)
 - [更新日志](./CHANGELOG.md)
 
@@ -193,7 +208,7 @@ clawpack --version
 欢迎 Issue 和 PR！
 
 ```bash
-git clone https://github.com/tonglei1996/clawpack.git
+git clone https://github.com/tonglei19961121/clawpack.git
 cd clawpack
 npm install
 npm run build

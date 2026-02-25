@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  clawpack:
+    build: .
+    container_name: clawpack-test
+    volumes:
+      # 挂载宿主机的 openclaw 配置用于测试
+      - ~/.openclaw:/root/.openclaw:ro
+      # 输出目录
+      - ./output:/output
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    command: ["status"]
+
+  clawpack-skill:
+    build: ./clawpack-skill
+    container_name: clawpack-skill-test
+    volumes:
+      - ~/.openclaw:/root/.openclaw
+    depends_on:
+      - clawpack
